@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Haraka Loans — Apply in minutes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <span class="brand">Haraka <span class="brand-dot">Loans</span></span>
+    <span class="badge">No upfront fees — ever</span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-inner">
+    <div>
+      <p class="eyebrow">Straight to your M-Pesa</p>
+      <h1>Apply for a loan.<br>Get paid to your own phone.</h1>
+      <p class="lede">
+        Fill in your details, we review your application, and if approved the money
+        is sent directly to your M-Pesa number. You never pay anything to apply,
+        to be reviewed, or to receive a loan.
+      </p>
+      <a href="#apply" class="cta">Start application</a>
+    </div>
+    <div class="promise-card" aria-hidden="true">
+      <div class="promise-row"><span class="dot dot-good"></span> We pay you — you never pay us to get approved</div>
+      <div class="promise-row"><span class="dot dot-good"></span> Funds land on your own M-Pesa number</div>
+      <div class="promise-row"><span class="dot dot-bad"></span> No one will ever ask you to send money for "approval"</div>
+    </div>
+  </div>
+</section>
+
+<section class="apply" id="apply">
+  <div class="wrap apply-inner">
+    <div class="panel">
+      <h2>Loan application</h2>
+      <form id="applicationForm">
+        <label>
+          Full name
+          <input type="text" name="fullName" required placeholder="Jane Wanjiku" />
+        </label>
+        <label>
+          National ID number
+          <input type="text" name="nationalId" required placeholder="12345678" />
+        </label>
+        <label>
+          Your M-Pesa number (this is where funds will be sent)
+          <input type="tel" name="phoneNumber" required placeholder="07XXXXXXXX" />
+        </label>
+        <div class="grid-2">
+          <label>
+            Monthly income (KES)
+            <input type="number" name="monthlyIncome" required min="0" placeholder="30000" />
+          </label>
+          <label>
+            Loan amount requested (KES)
+            <input type="number" name="amount" required min="500" placeholder="10000" />
+          </label>
+        </div>
+        <div class="grid-2">
+          <label>
+            Repayment term (months)
+            <select name="termMonths" required>
+              <option value="1">1 month</option>
+              <option value="3">3 months</option>
+              <option value="6">6 months</option>
+              <option value="12">12 months</option>
+            </select>
+          </label>
+          <label>
+            Purpose (optional)
+            <input type="text" name="purpose" placeholder="School fees, stock, emergency..." />
+          </label>
+        </div>
+        <button type="submit" class="submit-btn">Submit application</button>
+      </form>
+      <p id="formMessage" class="form-message" hidden></p>
+    </div>
+
+    <div class="panel">
+      <h2>Check application status</h2>
+      <p class="muted">Paste the reference ID you received after applying.</p>
+      <form id="statusForm">
+        <label>
+          Application ID
+          <input type="text" name="applicationId" required placeholder="e.g. 3f1c2a9e-..." />
+        </label>
+        <button type="submit" class="submit-btn secondary">Check status</button>
+      </form>
+      <div id="statusResult" class="status-result" hidden></div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="wrap">
+    <p>Haraka Loans never asks applicants to pay a fee, "insurance", or "activation cost" to receive a loan.
+      If anyone contacts you asking for this, it is a scam — report it and do not send money.</p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

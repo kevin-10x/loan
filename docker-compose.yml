@@ -1,0 +1,14 @@
+services:
+  loan-app:
+    build: .
+    image: loan-app:local
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env
+    volumes:
+      - loan-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  loan-data:
