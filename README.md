@@ -76,6 +76,54 @@ check the current list on the Daraja portal under your app's simulator docs, sin
 these values can change. Use those, not real production numbers, until you've gone
 through Safaricom's go-live process.
 
+## Running with Docker
+
+```
+cp .env.example .env   # fill in your real values first
+docker compose up --build
+```
+
+This builds a non-root, healthchecked image and runs it on port 4000, with the
+`data/` folder persisted in a named volume. Your `.env` is never baked into the
+image (see `.dockerignore`) — it's passed in at runtime via `env_file`.
+
+## CI/CD (GitHub Actions)
+
+`.github/workflows/ci.yml` runs on every push/PR to `main`:
+
+1. **build-and-test** — installs dependencies and boots the server to confirm
+   `/health` responds (a basic smoke test).
+2. **docker-build-and-push** — on pushes to `main` only, builds the Docker image
+   and pushes it to GitHub Container Registry (`ghcr.io/<owner>/loan-app`) using
+   the repo's built-in `GITHUB_TOKEN` — no extra secrets to configure.
+
+This is standard, auditable CI: every build is tied to a commit SHA and visible
+in the Actions tab, which is what you want for something handling money and
+personal ID data.
+
+## Pushing this to GitHub
+
+I don't have network access from where I run, so you'll need to push it yourself.
+The repo has already been initialized locally with a clean, real commit history
+(check with `git log`). From inside the project folder:
+
+```
+git remote add origin https://github.com/kevin-10x/LOAN-APP.git
+git branch -M main
+git push -u origin main
+```
+
+If the remote repo already has commits (e.g. a README created on GitHub), pull
+first to avoid conflicts:
+
+```
+git pull origin main --allow-unrelated-histories
+git push -u origin main
+```
+
+Double-check `.env` is **not** in the repo before pushing (`git status` should
+not show it — `.gitignore` already excludes it).
+
 ## About the original request
 
 If you came here wanting applicants to "send money for approval" to a fixed number
