@@ -4,6 +4,8 @@ const path = require('path');
 
 const applicationsRouter = require('./routes/applications');
 const mpesaRouter = require('./routes/mpesa');
+const authRouter = require('./routes/auth');
+const notificationsRouter = require('./routes/notifications');
 
 const app = express();
 app.use(express.json());
@@ -11,6 +13,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api', applicationsRouter);
 app.use('/api', mpesaRouter);
+app.use('/api', authRouter);
+app.use('/api', notificationsRouter);
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 

@@ -2,10 +2,14 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../services/db');
 const { disburseLoan } = require('../services/mpesaService');
+const { calculateLoan } = require('../services/interest');
+const { generateSchedule, processLatePayments } = require('../services/repayment');
+const { sendNotification } = require('../services/notifications');
+const { updateCreditScore } = require('../services/scoring');
+const auth = require('../services/auth');
 
 const router = express.Router();
 
-// very naive affordability check - replace with real credit scoring in production
 function assessRisk({ monthlyIncome, amount }) {
   if (!monthlyIncome || monthlyIncome <= 0) return { eligible: false, reason: 'No income provided' };
   const ratio = amount / monthlyIncome;
@@ -13,15 +17,10 @@ function assessRisk({ monthlyIncome, amount }) {
   return { eligible: true };
 }
 
-function normalizePhone(phone) {
-  // Accepts 07XXXXXXXX or 254XXXXXXXXX and returns 254XXXXXXXXX
-  const digits = String(phone).replace(/\D/g, '');
-  if (digits.startsWith('254')) return digits;
-  if (digits.startsWith('0')) return '254' + digits.slice(1);
-  return digits;
+function getUser(phoneNumber) {
+  return db.getUsers().find(u => u.phoneNumber === phoneNumber);
 }
 
-// Submit a new loan application - NO payment is ever requested here
 router.post('/applications', (req, res) => {
   const { fullName, nationalId, phoneNumber, monthlyIncome, amount, termMonths, purpose } = req.body;
 
@@ -30,36 +29,54 @@ router.post('/applications', (req, res) => {
   }
 
   const risk = assessRisk({ monthlyIncome: Number(monthlyIncome), amount: Number(amount) });
+  const { interest, rate, totalRepayable, installmentAmount } = calculateLoan(Number(amount), Number(termMonths));
 
   const application = {
     id: uuidv4(),
     fullName,
     nationalId,
-    phoneNumber: normalizePhone(phoneNumber),
+    phoneNumber: String(phoneNumber).replace(/\D/g, ''),
     monthlyIncome: Number(monthlyIncome) || 0,
     amount: Number(amount),
     termMonths: Number(termMonths),
     purpose: purpose || '',
     status: risk.eligible ? 'pending_review' : 'auto_declined',
     declineReason: risk.eligible ? null : risk.reason,
+    interestRate: rate,
+    interestAmount: interest,
+    totalRepayable,
+    installmentAmount,
     createdAt: new Date().toISOString(),
     disbursement: null
   };
 
   db.insert(application);
+
+  const user = getUser(application.phoneNumber) || db.getUsers().find(u => u.nationalId === nationalId);
+  if (user) {
+    sendNotification(user.id, 'sms',
+      `Application received! Amount: KES ${amount}, Repayable: KES ${totalRepayable} in ${termMonths} month(s). Reference: ${application.id}`
+    );
+    sendNotification(user.id, 'email',
+      `Dear ${fullName},\n\nYour loan application of KES ${amount} has been received. The total repayable amount is KES ${totalRepayable} over ${termMonths} months at ${(rate * 100)}% interest.\n\nReference ID: ${application.id}\n\nWe will notify you once reviewed.`
+    );
+  }
+
   res.status(201).json(application);
 });
 
-// Applicant checks their own status
 router.get('/applications/:id', (req, res) => {
   const app = db.getById(req.params.id);
   if (!app) return res.status(404).json({ error: 'Application not found' });
-  res.json(app);
+
+  const result = { ...app };
+  if (result.status === 'disbursed' || result.status === 'repaid') {
+    const schedule = db.getRepayments(result.id);
+    if (schedule) result.repaymentSchedule = schedule;
+  }
+  res.json(result);
 });
 
-// --- Admin endpoints ---
-// In production, protect these with real authentication (e.g. signed-in staff accounts),
-// not just a shared secret header.
 function requireAdmin(req, res, next) {
   const adminKey = req.headers['x-admin-key'];
   if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
@@ -69,11 +86,14 @@ function requireAdmin(req, res, next) {
 }
 
 router.get('/admin/applications', requireAdmin, (req, res) => {
-  res.json(db.getAll());
+  const apps = db.getAll();
+  const result = apps.map(a => {
+    const schedule = db.getRepayments(a.id);
+    return { ...a, repaymentSchedule: schedule || [] };
+  });
+  res.json(result);
 });
 
-// Approve an application -> disburses the loan straight to the BORROWER'S OWN number.
-// The borrower is never asked to send money at any point in this flow.
 router.post('/admin/applications/:id/approve', requireAdmin, async (req, res) => {
   const app = db.getById(req.params.id);
   if (!app) return res.status(404).json({ error: 'Application not found' });
@@ -91,6 +111,9 @@ router.post('/admin/applications/:id/approve', requireAdmin, async (req, res) =>
       remarks: `Loan disbursement for ${app.fullName}`
     });
 
+    const schedule = generateSchedule(app);
+    db.insertRepayments(schedule);
+
     const updated = db.update(app.id, {
       status: 'disbursed_pending_confirmation',
       disbursement: {
@@ -100,6 +123,17 @@ router.post('/admin/applications/:id/approve', requireAdmin, async (req, res) =>
         requestedAt: new Date().toISOString()
       }
     });
+
+    const user = db.getUsers().find(u => u.nationalId === app.nationalId);
+    if (user) {
+      sendNotification(user.id, 'sms',
+        `Congratulations ${app.fullName}! Your loan of KES ${app.amount} has been approved and is being sent to your M-Pesa. Total repayable: KES ${app.totalRepayable} in ${app.termMonths} installments of KES ${app.installmentAmount} each.`
+      );
+      sendNotification(user.id, 'email',
+        `Loan Approved!\n\nDear ${app.fullName},\n\nYour loan application for KES ${app.amount} has been APPROVED.\n\nLoan Details:\n- Amount: KES ${app.amount}\n- Interest: ${(app.interestRate * 100)}%\n- Total Repayable: KES ${app.totalRepayable}\n- Installments: ${app.termMonths} payments of KES ${app.installmentAmount}\n\nFunds are being sent to your M-Pesa.`
+      );
+    }
+
     res.json(updated);
   } catch (err) {
     const message = err.response ? err.response.data : err.message;
@@ -111,7 +145,62 @@ router.post('/admin/applications/:id/decline', requireAdmin, (req, res) => {
   const app = db.getById(req.params.id);
   if (!app) return res.status(404).json({ error: 'Application not found' });
   const updated = db.update(app.id, { status: 'declined', declineReason: req.body.reason || 'Not specified' });
+
+  const user = db.getUsers().find(u => u.nationalId === app.nationalId);
+  if (user) {
+    sendNotification(user.id, 'sms', `Your loan application of KES ${app.amount} has been declined. Reason: ${updated.declineReason}`);
+  }
+
   res.json(updated);
+});
+
+router.get('/my/applications', auth.requireAuth, (req, res) => {
+  const user = req.user;
+  const apps = db.getAll().filter(a => a.nationalId === user.nationalId);
+  res.json(apps);
+});
+
+router.get('/my/repayments', auth.requireAuth, (req, res) => {
+  const user = req.user;
+  const apps = db.getAll().filter(a => a.nationalId === user.nationalId);
+  const allRepayments = [];
+  for (const app of apps) {
+    const schedule = db.getRepayments(app.id);
+    if (schedule) allRepayments.push(...schedule.map(s => ({ ...s, application: { id: app.id, amount: app.amount } })));
+  }
+  res.json(allRepayments);
+});
+
+router.post('/my/applications/:id/pay', auth.requireAuth, async (req, res) => {
+  const user = req.user;
+  const app = db.getById(req.params.id);
+  if (!app) return res.status(404).json({ error: 'Application not found' });
+  if (app.nationalId !== user.nationalId) return res.status(403).json({ error: 'Not your application' });
+  if (app.status !== 'disbursed' && app.status !== 'repaid') return res.status(400).json({ error: 'Loan not active' });
+
+  const { amount } = req.body;
+  if (!amount || amount <= 0) return res.status(400).json({ error: 'Invalid amount' });
+
+  const pending = db.getRepayments(app.id).filter(r => r.status !== 'paid');
+  const totalDue = pending.reduce((s, r) => s + r.amount + r.penaltyAmount - r.paidAmount, 0);
+
+  if (amount < pending[0]?.amount) {
+    return res.status(400).json({ error: `Minimum payment is KES ${pending[0]?.amount} for installment ${pending[0]?.installmentNumber}` });
+  }
+
+  const { recordPayment } = require('../services/repayment');
+  const result = recordPayment(app.id, amount, 'manual-payment-' + Date.now());
+  res.json(result);
+});
+
+router.post('/my/applications/:id/repayments/check-late', auth.requireAuth, (req, res) => {
+  const user = req.user;
+  const app = db.getById(req.params.id);
+  if (!app) return res.status(404).json({ error: 'Application not found' });
+  if (app.nationalId !== user.nationalId) return res.status(403).json({ error: 'Not your application' });
+
+  const latePayments = processLatePayments(app.id);
+  res.json({ lateInstallments: latePayments });
 });
 
 module.exports = router;

@@ -3,38 +3,92 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Haraka Loans — Admin</title>
+<title>Haraka Loans — Admin Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <style>
-  .admin-wrap { max-width: 960px; margin: 40px auto; padding: 0 24px; }
-  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; }
-  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); font-size: 0.88rem; }
-  th { background: #F1EFE6; color: var(--ink-soft); text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.05em; }
-  button.small { padding: 6px 12px; font-size: 0.8rem; border-radius: 7px; border: none; cursor: pointer; margin-right: 6px; }
+  body { background: #F7F5F0; }
+  .admin-wrap { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .stat-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .stat-card .stat-label2 { font-size: 0.78rem; text-transform: uppercase; color: var(--ink-soft); letter-spacing: 0.05em; }
+  .stat-card .stat-value2 { font-size: 1.4rem; font-weight: 700; color: var(--forest-deep); }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 0.85rem; vertical-align: top; }
+  th { background: #F1EFE6; color: var(--ink-soft); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; }
+  tr:hover { background: #FAF9F5; }
+  button.small { padding: 5px 10px; font-size: 0.78rem; border-radius: 7px; border: none; cursor: pointer; margin: 2px; white-space: nowrap; }
   .approve-btn { background: var(--good); color: white; }
   .decline-btn { background: var(--bad); color: white; }
-  #keyBar { display: flex; gap: 10px; margin-bottom: 20px; }
-  #keyBar input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--line); }
+  .info-btn { background: #E5EFFA; color: #1E5FA8; }
+  .penalty-btn { background: #FCF2D9; color: #8A6D1E; }
+  #keyBar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  #keyBar input { flex: 1; min-width: 200px; padding: 10px; border-radius: 8px; border: 1px solid var(--line); }
   #keyBar button { padding: 10px 16px; border-radius: 8px; border: none; background: var(--forest); color: white; cursor: pointer; }
+  .schedule-toggle { cursor: pointer; color: #1E5FA8; text-decoration: underline; font-size: 0.78rem; }
+  .schedule-detail { display: none; background: #F8F7F3; padding: 8px 10px; border-radius: 8px; margin-top: 6px; font-size: 0.82rem; }
+  .schedule-detail.open { display: block; }
+  .tab-bar { display: flex; gap: 4px; margin-bottom: 16px; }
+  .tab-btn { padding: 8px 16px; border: 1px solid var(--line); border-radius: 8px 8px 0 0; background: #EDEAE0; cursor: pointer; font-size: 0.85rem; }
+  .tab-btn.active { background: #fff; border-bottom-color: #fff; font-weight: 600; }
+  .search-bar { margin-bottom: 16px; }
+  .search-bar input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); }
+  @media (max-width: 860px) {
+    table { font-size: 0.78rem; }
+    th, td { padding: 6px 8px; }
+  }
 </style>
 </head>
 <body>
 <div class="admin-wrap">
-  <h1 style="font-size:1.6rem;">Admin — loan review</h1>
-  <p class="muted">This key is for staff use only. In production, replace with real staff login/authentication.</p>
-  <div id="keyBar">
-    <input type="password" id="adminKeyInput" placeholder="Admin key (ADMIN_KEY from your .env)" />
-    <button id="loadBtn">Load applications</button>
+  <div class="admin-header">
+    <h1 style="font-size:1.4rem;margin:0;">Haraka Loans — Admin</h1>
+    <a href="/" style="color:var(--forest);">← Back to site</a>
   </div>
-  <table>
-    <thead>
-      <tr><th>Name</th><th>Phone</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
-    </thead>
-    <tbody id="rows"></tbody>
-  </table>
+
+  <div id="keyBar">
+    <input type="password" id="adminKeyInput" placeholder="Admin key (ADMIN_KEY from .env)" />
+    <button id="loadBtn">Load dashboard</button>
+  </div>
+
+  <div id="dashboardContent" hidden>
+    <div class="stats-row" id="statsRow"></div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="all">All</button>
+      <button class="tab-btn" data-tab="pending">Pending Review</button>
+      <button class="tab-btn" data-tab="active">Active Loans</button>
+      <button class="tab-btn" data-tab="repaid">Repaid</button>
+      <button class="tab-btn" data-tab="overdue">Overdue</button>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search by name, phone, ID, or amount..." />
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Amount</th>
+            <th>Interest</th>
+            <th>Repayable</th>
+            <th>Status</th>
+            <th>Credit</th>
+            <th>Schedule</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
 </div>
+
 <script src="admin.js"></script>
 </body>
 </html>

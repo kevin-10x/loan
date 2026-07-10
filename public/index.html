@@ -13,11 +13,18 @@
 <header class="topbar">
   <div class="wrap topbar-inner">
     <span class="brand">Haraka <span class="brand-dot">Loans</span></span>
-    <span class="badge">No upfront fees — ever</span>
+    <div class="topbar-right">
+      <span class="badge">No upfront fees — ever</span>
+      <a href="#dashboard" id="dashboardLink" class="nav-link" hidden>My Account</a>
+      <a href="#login" id="loginLink" class="nav-link">Login</a>
+      <a href="#register" id="registerLink" class="nav-link">Register</a>
+      <button id="logoutBtn" class="nav-link btn-link" hidden>Logout</button>
+    </div>
   </div>
 </header>
 
-<section class="hero">
+<!-- Hero / Landing -->
+<section class="hero" id="heroSection">
   <div class="wrap hero-inner">
     <div>
       <p class="eyebrow">Straight to your M-Pesa</p>
@@ -30,6 +37,9 @@
       <a href="#apply" class="cta">Start application</a>
     </div>
     <div class="promise-card" aria-hidden="true">
+      <div class="promise-row pricing-row">
+        <span>Interest rates from just <strong>5%</strong></span>
+      </div>
       <div class="promise-row"><span class="dot dot-good"></span> We pay you — you never pay us to get approved</div>
       <div class="promise-row"><span class="dot dot-good"></span> Funds land on your own M-Pesa number</div>
       <div class="promise-row"><span class="dot dot-bad"></span> No one will ever ask you to send money for "approval"</div>
@@ -37,6 +47,7 @@
   </div>
 </section>
 
+<!-- Apply Section -->
 <section class="apply" id="apply">
   <div class="wrap apply-inner">
     <div class="panel">
@@ -51,7 +62,7 @@
           <input type="text" name="nationalId" required placeholder="12345678" />
         </label>
         <label>
-          Your M-Pesa number (this is where funds will be sent)
+          Your M-Pesa number
           <input type="tel" name="phoneNumber" required placeholder="07XXXXXXXX" />
         </label>
         <div class="grid-2">
@@ -60,24 +71,31 @@
             <input type="number" name="monthlyIncome" required min="0" placeholder="30000" />
           </label>
           <label>
-            Loan amount requested (KES)
+            Loan amount (KES)
             <input type="number" name="amount" required min="500" placeholder="10000" />
           </label>
         </div>
         <div class="grid-2">
           <label>
-            Repayment term (months)
+            Repayment term
             <select name="termMonths" required>
-              <option value="1">1 month</option>
-              <option value="3">3 months</option>
-              <option value="6">6 months</option>
-              <option value="12">12 months</option>
+              <option value="1">1 month — 5% interest</option>
+              <option value="3">3 months — 10% interest</option>
+              <option value="6">6 months — 15% interest</option>
+              <option value="12">12 months — 25% interest</option>
             </select>
           </label>
           <label>
             Purpose (optional)
             <input type="text" name="purpose" placeholder="School fees, stock, emergency..." />
           </label>
+        </div>
+        <div id="loanBreakdown" class="loan-breakdown" hidden>
+          <p><strong>Loan breakdown:</strong></p>
+          <p>Principal: KES <span id="bdPrincipal">0</span></p>
+          <p>Interest: KES <span id="bdInterest">0</span></p>
+          <p>Total repayable: KES <span id="bdTotal">0</span></p>
+          <p>Installments: <span id="bdTerms">0</span> x KES <span id="bdInstallment">0</span></p>
         </div>
         <button type="submit" class="submit-btn">Submit application</button>
       </form>
@@ -98,6 +116,77 @@
     </div>
   </div>
 </section>
+
+<!-- Login Section -->
+<section class="section" id="loginSection" hidden>
+  <div class="wrap auth-wrap">
+    <div class="panel auth-panel">
+      <h2>Login</h2>
+      <form id="loginForm">
+        <label>
+          Email
+          <input type="email" name="email" required placeholder="you@example.com" />
+        </label>
+        <label>
+          Password
+          <input type="password" name="password" required placeholder="Your password" />
+        </label>
+        <button type="submit" class="submit-btn">Login</button>
+      </form>
+      <p id="loginMessage" class="form-message" hidden></p>
+      <p class="muted">Don't have an account? <a href="#register" class="switch-auth">Register here</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- Register Section -->
+<section class="section" id="registerSection" hidden>
+  <div class="wrap auth-wrap">
+    <div class="panel auth-panel">
+      <h2>Register</h2>
+      <form id="registerForm">
+        <label>
+          Full name
+          <input type="text" name="fullName" required placeholder="Jane Wanjiku" />
+        </label>
+        <label>
+          Email
+          <input type="email" name="email" required placeholder="you@example.com" />
+        </label>
+        <label>
+          National ID
+          <input type="text" name="nationalId" required placeholder="12345678" />
+        </label>
+        <label>
+          Phone number
+          <input type="tel" name="phoneNumber" required placeholder="07XXXXXXXX" />
+        </label>
+        <label>
+          Monthly income (KES)
+          <input type="number" name="monthlyIncome" placeholder="30000" />
+        </label>
+        <label>
+          Password (min 6 characters)
+          <input type="password" name="password" required minlength="6" placeholder="Your password" />
+        </label>
+        <button type="submit" class="submit-btn">Create account</button>
+      </form>
+      <p id="registerMessage" class="form-message" hidden></p>
+      <p class="muted">Already have an account? <a href="#login" class="switch-auth">Login here</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- Dashboard Section -->
+<section class="section" id="dashboardSection" hidden>
+  <div class="wrap">
+    <div id="dashHeader" class="dash-header"></div>
+    <div id="dashContent"></div>
+  </div>
+</section>
+
+<!-- Notification Toast -->
+<div id="notifToast" class="notif-toast" hidden></div>
 
 <footer class="footer">
   <div class="wrap">

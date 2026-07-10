@@ -228,8 +228,59 @@ input:focus, select:focus {
   max-width: 700px;
 }
 
+/* Nav links */
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.nav-link { color: #E9E4D6; text-decoration: none; font-size: 0.88rem; font-weight: 500; }
+.nav-link:hover { color: #fff; }
+.btn-link { background: none; border: 1px solid rgba(242,239,230,0.35); border-radius: 999px; padding: 5px 12px; cursor: pointer; font-size: 0.85rem; color: #E9E4D6; }
+.btn-link:hover { border-color: #fff; color: #fff; }
+
+/* Auth sections */
+.section { padding: 40px 0; }
+.auth-wrap { max-width: 480px; margin: 0 auto; }
+.auth-panel { padding: 32px; }
+
+/* Dashboard */
+.dash-header { margin-bottom: 24px; }
+.dash-header-inner { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+.dash-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+.dash-stats .stat-card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; min-width: 120px; }
+.stat-label { display: block; font-size: 0.72rem; text-transform: uppercase; color: var(--ink-soft); letter-spacing: 0.04em; }
+.stat-value { font-size: 1.15rem; font-weight: 700; color: var(--forest-deep); }
+.dash-panel { margin-bottom: 20px; }
+.loan-card { border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 12px; background: #FCFBF8; }
+.loan-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.loan-card .small-btn { width: auto; padding: 6px 12px; font-size: 0.8rem; margin-top: 8px; margin-right: 6px; }
+
+/* Notifications in dashboard */
+.notif-item { padding: 10px 12px; border-bottom: 1px solid var(--line); cursor: pointer; font-size: 0.88rem; display: flex; justify-content: space-between; align-items: center; }
+.notif-unread { background: #F5F8F6; font-weight: 600; }
+.notif-item:hover { background: #EDEAE0; }
+
+/* Repayment table */
+.repay-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.repay-table th, .repay-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+.repay-table th { background: #F1EFE6; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
+
+/* Loan breakdown preview */
+.loan-breakdown { margin-top: 12px; padding: 12px; background: #F3F5F2; border-radius: 9px; font-size: 0.88rem; }
+.loan-breakdown p { margin: 3px 0; }
+
+/* Notification toast */
+.notif-toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 10px; color: #fff; font-size: 0.9rem; font-weight: 500; z-index: 9999; box-shadow: 0 4px 16px rgba(0,0,0,0.15); max-width: 400px; }
+.notif-toast.success { background: var(--good); }
+.notif-toast.error { background: var(--bad); }
+.notif-toast.info { background: #1E5FA8; }
+
+/* Pricing badge */
+.pricing-row { justify-content: center; text-align: center; font-size: 1.05rem; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.12); color: var(--gold); }
+.pricing-row strong { color: #FBFAF6; }
+
 @media (max-width: 860px) {
   .hero-inner, .apply-inner { grid-template-columns: 1fr; }
   .hero h1 { font-size: 2.1rem; }
   .grid-2 { grid-template-columns: 1fr; }
+  .topbar-right { gap: 8px; }
+  .topbar-inner { flex-wrap: wrap; gap: 8px; }
+  .dash-header-inner { flex-direction: column; }
 }
